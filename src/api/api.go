@@ -22,7 +22,7 @@ import (
 	"strings"
 	"text/template"
 	"time"
-	"golang.org/x/image/draw"
+	xdraw "golang.org/x/image/draw"
 )
 
 const s = `<?xml version="1.0" encoding="UTF-8"?>
@@ -180,7 +180,7 @@ func fetchIcon(targetURL string) (string, error) {
 // resizeImage resizes an image to the specified dimensions
 func resizeImage(src image.Image, width, height int) image.Image {
 	dst := image.NewRGBA(image.Rect(0, 0, width, height))
-	draw.CatmullRom.Scale(dst, dst.Bounds(), src, src.Bounds(), draw.Over, nil)
+	xdraw.CatmullRom.Scale(dst, dst.Bounds(), src, src.Bounds(), xdraw.Over, nil)
 	return dst
 }
 
