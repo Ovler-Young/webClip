@@ -131,15 +131,15 @@ func fetchIcon(targetURL string) (string, error) {
 		"/apple-touch-icon-72x72.png",
 		"/apple-touch-icon-60x60.png",
 		"/apple-touch-icon-57x57.png",
-		"/favicon.ico",
 		"/favicon.png",
 	}
 
-	// Create HTTP client with redirect following
+	// Create HTTP client with redirect following and timeout
 	client := &http.Client{
 		CheckRedirect: func(req *http.Request, via []*http.Request) error {
 			return nil // Follow redirects
 		},
+		Timeout: 10 * time.Second,
 	}
 
 	// Try each icon path
@@ -151,27 +151,29 @@ func fetchIcon(targetURL string) (string, error) {
 		if err != nil {
 			continue
 		}
-		req.Header.Set("User-Agent", "Mozilla/5.0 (compatible; WebClip/1.0)")
+		req.Header.Set("User-Agent", "Mozilla/5.0 (iPhone; CPU iPhone OS 14_0 like Mac OS X) AppleWebKit/605.1.15")
 
 		resp, err := client.Do(req)
 		if err != nil {
 			continue
 		}
-		defer resp.Body.Close()
 
 		if resp.StatusCode == http.StatusOK {
 			// Read the image
 			imgData, err := ioutil.ReadAll(resp.Body)
+			resp.Body.Close()
 			if err != nil {
 				continue
 			}
 
-			// Decode image
-			img, _, err := image.Decode(bytes.NewReader(imgData))
+			// Try to decode image
+			img, format, err := image.Decode(bytes.NewReader(imgData))
 			if err != nil {
-				log.Printf("Failed to decode image from %s: %v", iconURL, err)
+				log.Printf("Failed to decode image from %s (format attempt: %s): %v", iconURL, format, err)
 				continue
 			}
+
+			log.Printf("Successfully decoded %s image from %s", format, iconURL)
 
 			// Resize to 180x180 (optimal for modern iOS devices)
 			resized := resizeImage(img, 180, 180)
@@ -180,6 +182,7 @@ func fetchIcon(targetURL string) (string, error) {
 			var buf bytes.Buffer
 			err = png.Encode(&buf, resized)
 			if err != nil {
+				log.Printf("Failed to encode PNG: %v", err)
 				continue
 			}
 
@@ -188,8 +191,10 @@ func fetchIcon(targetURL string) (string, error) {
 			log.Printf("Successfully fetched and encoded icon from %s", iconURL)
 			return base64Str, nil
 		}
+		resp.Body.Close()
 	}
 
+	log.Printf("No suitable icon found for %s", targetURL)
 	return "", nil
 }
 
