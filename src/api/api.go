@@ -22,7 +22,6 @@ import (
 	"strings"
 	"text/template"
 	"time"
-	xdraw "golang.org/x/image/draw"
 )
 
 const s = `<?xml version="1.0" encoding="UTF-8"?>
@@ -177,10 +176,28 @@ func fetchIcon(targetURL string) (string, error) {
 	return "", nil
 }
 
-// resizeImage resizes an image to the specified dimensions
+// resizeImage resizes an image to the specified dimensions using nearest neighbor
 func resizeImage(src image.Image, width, height int) image.Image {
 	dst := image.NewRGBA(image.Rect(0, 0, width, height))
-	xdraw.CatmullRom.Scale(dst, dst.Bounds(), src, src.Bounds(), xdraw.Over, nil)
+
+	// Get source bounds
+	srcBounds := src.Bounds()
+	srcW := srcBounds.Dx()
+	srcH := srcBounds.Dy()
+
+	// Perform simple scaling using nearest neighbor
+	for y := 0; y < height; y++ {
+		for x := 0; x < width; x++ {
+			// Map destination coordinates to source coordinates
+			srcX := x * srcW / width
+			srcY := y * srcH / height
+
+			// Get source pixel and set to destination
+			srcColor := src.At(srcBounds.Min.X+srcX, srcBounds.Min.Y+srcY)
+			dst.Set(x, y, srcColor)
+		}
+	}
+
 	return dst
 }
 
