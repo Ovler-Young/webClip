@@ -135,10 +135,25 @@ func fetchIcon(targetURL string) (string, error) {
 		"/favicon.png",
 	}
 
+	// Create HTTP client with redirect following
+	client := &http.Client{
+		CheckRedirect: func(req *http.Request, via []*http.Request) error {
+			return nil // Follow redirects
+		},
+	}
+
 	// Try each icon path
 	for _, path := range iconPaths {
 		iconURL := baseURL + path
-		resp, err := http.Get(iconURL)
+
+		// Create request with user agent
+		req, err := http.NewRequest("GET", iconURL, nil)
+		if err != nil {
+			continue
+		}
+		req.Header.Set("User-Agent", "Mozilla/5.0 (compatible; WebClip/1.0)")
+
+		resp, err := client.Do(req)
 		if err != nil {
 			continue
 		}
@@ -154,6 +169,7 @@ func fetchIcon(targetURL string) (string, error) {
 			// Decode image
 			img, _, err := image.Decode(bytes.NewReader(imgData))
 			if err != nil {
+				log.Printf("Failed to decode image from %s: %v", iconURL, err)
 				continue
 			}
 
@@ -169,6 +185,7 @@ func fetchIcon(targetURL string) (string, error) {
 
 			// Convert to base64
 			base64Str := base64.StdEncoding.EncodeToString(buf.Bytes())
+			log.Printf("Successfully fetched and encoded icon from %s", iconURL)
 			return base64Str, nil
 		}
 	}
