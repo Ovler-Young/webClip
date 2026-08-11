@@ -18,7 +18,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.22' # 匹配项目最新的 Go 版本
+          go-version: '1.25' # 匹配项目最新的 Go 版本
 
       - name: Build binary
         run: |
