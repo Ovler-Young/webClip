@@ -124,6 +124,7 @@ func isSensitiveParam(name string) bool {
 
 // sanitizeURL redacts sensitive query parameter values, strips the fragment,
 // and masks embedded passwords, returning a safe-for-listing URL string.
+// Redaction uses "*"; net/url encodes it as %2A, so restore it on output.
 func sanitizeURL(raw string) string {
 	u, err := url.Parse(raw)
 	if err != nil {
@@ -156,7 +157,7 @@ func sanitizeURL(raw string) string {
 		}
 	}
 
-	return u.String()
+	return strings.ReplaceAll(u.String(), "%2A", "*")
 }
 
 var (
